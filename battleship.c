@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdlib.h>     // malloc()
 #include <string.h>     // memset()
 #include <ctype.h>      // toupper()
 
@@ -20,15 +21,25 @@ int main (void){
         coll = 10;          // (# of collumns on the board)
         rows = 10;          // (# of rows on the board)
         
-        // Define board Size
-        char board[coll][rows];
+    // dynamically set board size in memory
         
-        memset(board, '*', sizeof(board));
+        // Allocate collumn space.
+        char **board = malloc(coll * sizeof(char *));
+        // Allocate total space to board
+        board[0] = malloc(coll * rows * sizeof(char));
         
-        // Playing is incremented with wins until player quits program.
+        // Initialize row arrays to ensure memory-usage is contiguous.
+        for(int i = 1; i < coll; i++) {
+            board[i] = board[0] + i * rows;
+        }
         
-        int playing = 0;
-        while (playing >= 0){
+        // Set default markers to water.
+        memset(*board, '*', sizeof(board[0][0]) * coll * rows);
+       
+    // Begin round.
+        // round is incremented with wins until player quits program.
+        int round = 0;
+        while (round >= 0){
             
             int c, r, f;    // c == collumns; r == Rows; f == frame
             for(c = 0 ; c < coll ; c++)
@@ -41,8 +52,7 @@ int main (void){
                 // for each array within that array (rows)
                 for( r = 0; r < rows; r++ ) {
                     // Ensure the value is uppercase.
-                    board[c][r] = toupper(board[c][r]);
-                    printf("| %c ",board[c][r]);
+                    printf("| %c ", board[c][r]);
                     /*
                     if (board[c][r] != "*" || "A" || "B" || "C"){
                         printf("| I ");
