@@ -8,8 +8,25 @@ void print_board(char **board, int coll, int rows);
 
 #define NUM_ARRAY_ELEM(a) (sizeof(a) / sizeof(*a))
 
-
+typedef struct ship {
+    char name[17];
+    char mark_char[1];      // Character that the ship displays when printed.
+    int ship_size[1];       // Amount of markers allocated to the ship.
+    int coord[2];           // Location of ship. First num is Column, second is row
+    int orient[1];          // 0 - Horizontal; 1 - Vertical
+}ship;
+        
 int main (void){
+    
+    ship patrol = { "Patrol Boat", 'P', 2, { -1, -1}, {-1}};
+    ship sub = { "Submarine", 'S', 2, { -1, -1}, {-1}};
+    ship cruise = { "Cruiser", 'C', 3, { -1, -1}, {-1}};
+    ship destroyer = { "Destroyer", 'D', 3, { -1, -1}, {-1}};
+    ship battle = { "Battleship", 'B', 4, { -1, -1}, {-1}};
+    ship aircraft = { "Aircraft Carrier", 'A', 5, { -1, -1}, {-1}};
+    ship ships[6] = {patrol, sub, cruise, destroyer, battle, aircraft};
+    
+    srand((unsigned)time(NULL)); // seed srand()
     
     printf("Hello Battleship\n");
     // running == "program is running"
@@ -35,6 +52,35 @@ int main (void){
         }
         // Set default markers to water.
         memset(*board, '*', sizeof(board[0][0]) * coll * rows);
+        
+    // Place ships randomly
+        for (int i = 0; i < 7; i++){
+            // Determine horizontal or vertical orientation of ship.
+            *ships[i].orient = rand() % 2;
+
+            if ( *ships[i].orient == 0){
+                printf("DEBUG - %d is Horizontal: %d\n", i, *ships[i].orient);
+                
+            } else if (*ships[i].orient == 1){
+                printf("DEBUG - %d is Vertical: %d\n", i, *ships[i].orient);
+                
+            } else {
+                printf("DEBUG - %d is NOT WORKING: %d\n", i, *ships[i].orient);
+            }
+            
+            
+/*
+            // Collin is a nice guy; he is also our collumn counter.
+            for(int collin = 0; collin < coll; collin++) {
+                for( j = 0; j < n; j++) {
+                    ships_ptr[i][j] = rand()%2;
+                    if( ships_ptr[i][j] == 1) {
+                        count++;
+                    }
+                }
+            }
+ */
+        }
        
     // Begin round.
         // round is incremented with wins until player quits program.
