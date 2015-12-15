@@ -3,18 +3,25 @@
 #include <string.h>     // memset()
 #include <ctype.h>      // toupper()
 #include <time.h>       // seed for srand()
-
-void print_board(char **board, int coll, int rows);
-
-#define NUM_ARRAY_ELEM(a) (sizeof(a) / sizeof(*a))
+#include <stdbool.h>    // Adds typedef for bool
 
 typedef struct ship {
     char name[17];
-    char mark_char[1];      // Character that the ship displays when printed.
-    int ship_size[1];       // Amount of markers allocated to the ship.
-    int coord[2];           // Location of ship. First num is Column, second is row
-    int orient[1];          // 0 - Horizontal; 1 - Vertical
+    char mark_char[1];          // Character that the ship displays when printed.
+    unsigned int ship_size[1];  // Amount of markers allocated to the ship.
+    struct coord {
+        unsigned int horiz[1];               // Location of ship. First num is Column, second is row
+        unsigned int verti[1];
+    }coord;
+    int orient[1];              // -1 - unset; 0 - Horizontal; 1 - Vertical
 }ship;
+
+void print_board(char **board, int coll, int rows);
+unsigned int rand_point(unsigned int max);
+int set_ship (ship *vessel, int board_width, int board_height, char **board);
+void clean_exit(int exit_type, char *board);
+
+#define NUM_ARRAY_ELEM(a) (sizeof(a) / sizeof(*a))
         
 int main (void){
     
@@ -24,7 +31,7 @@ int main (void){
     ship destroyer = { "Destroyer", 'D', 3, { -1, -1}, {-1}};
     ship battle = { "Battleship", 'B', 4, { -1, -1}, {-1}};
     ship aircraft = { "Aircraft Carrier", 'A', 5, { -1, -1}, {-1}};
-    ship ships[6] = {patrol, sub, cruise, destroyer, battle, aircraft};
+    ship *ships[6] = { &patrol, &sub, &cruise, &destroyer, &battle, &aircraft };
     
     srand((unsigned)time(NULL)); // seed srand()
     
@@ -50,39 +57,25 @@ int main (void){
         for(int i = 1; i < coll; i++) {
             board[i] = board[0] + i * rows;
         }
+        
         // Set default markers to water.
         memset(*board, '*', sizeof(board[0][0]) * coll * rows);
         
-    // Place ships randomly
-        for (int i = 0; i < 7; i++){
-            // Determine horizontal or vertical orientation of ship.
-            *ships[i].orient = rand() % 2;
+        // Iterate through the list of ships and randomly place the ships in valid locations.
+        for (int i = 0; i < 6; i++){
             
-            // Depending on orientation of ship [horizonal(0) or vertical(1)]
-            switch (*ships[i].orient) {
-                // Set coordinates for Horizontal Ships
-                case 0:
-                    printf("DEBUG - %d is Horizontal: %d\n", i, *ships[i].orient);
-                // Set coordinates for Vertical Ships
-                    break;
-                case 1:
-                    printf("DEBUG - %d is Vertical: %d\n", i, *ships[i].orient);
-                    break;
-                default:
-                    printf("DEBUG - %d is NOT WORKING: %d\n", i, *ships[i].orient);
-                    break;
-            }
-/*
-            // Collin is a nice guy; he is also our collumn counter.
-            for(int collin = 0; collin < coll; collin++) {
-                for( j = 0; j < n; j++) {
-                    ships_ptr[i][j] = rand()%2;
-                    if( ships_ptr[i][j] == 1) {
-                        count++;
-                    }
-                }
-            }
- */
+            // Assign horizontal or vertical orientation (random)
+            *ships[i]->orient = rand() % 2;
+            
+            // Set the ship to a valid place on the board. If none can be found, return the error.
+            if (!set_ship(ships[i], (coll - 1), (rows-1), board)){
+                
+                clean_exit(1, *board);
+                
+            } else {
+                
+            };
+            
         }
        
     // Begin round.
@@ -140,4 +133,120 @@ void print_board(char **board, int coll, int rows){
         printf("+\n");
         
     }
+}
+
+// Provides a random number limited to the maximum passed.
+unsigned int rand_point(unsigned int max) {
+    int rando;
+    
+    // Minimum number must be 0 because battleship does not have negatives.
+    // unsigned int min = 0;
+    
+    // Define the range
+    const unsigned int range = 1 + max; // - min;
+    
+    // Divide the maximum random into segments that are smaller than the range
+    const unsigned int segments = RAND_MAX / range;
+    const unsigned int limit = segments * range;
+
+    do
+    {
+        rando = rand();
+    } while (rando >= limit);
+    
+    return (rando / segments);
+}
+
+// Determine a valid locaiton on the board from random.
+int set_ship (ship *vessel, int board_width, int board_height, char **board){
+    
+    bool location_found = false;
+    int orientation = *vessel->orient;
+    int vessel_size = *vessel->ship_size;
+    int horizontal;
+    int vertical;
+    
+    switch (orientation) {
+        // Horizontal Ships
+        case 0:
+            
+            printf("DEBUG - Horizontal: %d\n", orientation);
+            
+            while (location_found == false){
+                // Generate a starting point that would place the ship inside the board.
+                horizontal = rand_point(board_width - vessel_size);
+                printf("DEBUG - Random Horizontal Starting point is: %d\n", horizontal);
+                
+                // Generate a row number that is on the board.
+                vertical = rand_point(board_height);
+                printf("DEBUG - Random Vertical Starting point is: %d\n", vertical);
+
+                // for the size of the ship
+                for (int i = 0; i < vessel_size; i++){
+                    // incrementally check that location for water. If not, break out for new numbers.
+                                // Collumn #        // Row #
+                    printf("DEBUG - HoriCheck #%d\n", i);
+                    if ( board[horizontal + i][vertical] != '*'){
+                        break;
+                    }
+                    
+                    // if we reach the end of the loop, all spaces contain water. location is found.
+                    if (i == (vessel_size - 1)){
+                        location_found = true;
+                    }
+                    
+                }
+            }
+            
+            break;
+            
+        // Vertical Ships
+        case 1:
+            printf("DEBUG - VERTICAL: %d\n", orientation);
+
+            while (location_found == false){
+                // Generate a starting point that would place the ship inside the board.
+                vertical = rand_point(board_height - vessel_size);
+                printf("DEBUG - Random Vertical Starting point is: %d\n", vertical);
+                
+                // Generate a collumn number that is on the board.
+                horizontal = rand_point(board_width);
+                printf("DEBUG - Random Horizontal Starting point is: %d\n", horizontal);
+                
+                // for the size of the ship
+                for (int i = 0; i < vessel_size; i++){
+                    // incrementally check along vertical axis for water. If not, break out for new numbers.
+                               // Collumn #        // Row #
+                    printf("DEBUG - VertiCheck #%d\n", i);
+                    if (board[horizontal][vertical +i] != '*'){
+                        break;
+                    }
+                    
+                    // if we reach the end of the loop, all spaces contain water. location is found.
+                    if (i == (vessel_size - 1)){
+                        location_found = true;
+                    }
+                    
+                }
+            } break;
+            
+        default:
+            printf("DEBUG - ERROR: It is BROKEN!!!");
+            return 1;
+            break;
+    }
+    return -1;
+}
+
+void clean_exit(int exit_type, char *board){
+    switch(exit_type){
+        case 0:
+            printf("Goodbye!"); break;
+        case 1:
+            printf("ERROR in Setting Ship. Exiting"); break;
+        default:
+            printf("Unknown ERROR. Exiting.");
+    }
+    free(board);
+    exit(exit_type);
 }
