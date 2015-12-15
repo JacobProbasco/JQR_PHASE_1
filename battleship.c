@@ -2,7 +2,7 @@
 #include <stdlib.h>     // malloc()
 #include <string.h>     // memset()
 #include <ctype.h>      // toupper()
-
+#include <time.h>       // seed for srand()
 
 void print_board(char **board, int coll, int rows);
 
