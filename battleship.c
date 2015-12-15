@@ -3,16 +3,17 @@
 #include <string.h>     // memset()
 #include <ctype.h>      // toupper()
 
+
+void print_board(char **board, int coll, int rows);
+
 #define NUM_ARRAY_ELEM(a) (sizeof(a) / sizeof(*a))
 
 
 int main (void){
     
     printf("Hello Battleship\n");
-    
     // running == "program is running"
     int running = 1;
-    
     while (running){
         // Set-Up New Game
         
@@ -32,7 +33,6 @@ int main (void){
         for(int i = 1; i < coll; i++) {
             board[i] = board[0] + i * rows;
         }
-        
         // Set default markers to water.
         memset(*board, '*', sizeof(board[0][0]) * coll * rows);
        
@@ -41,42 +41,13 @@ int main (void){
         int round = 0;
         while (round >= 0){
             
-            int c, r, f;    // c == collumns; r == Rows; f == frame
-            for(c = 0 ; c < coll ; c++)
-                printf("+---");
+            print_board(board, coll, rows);
             
-            printf("+\n");
-            
-            // for each item in the first array (collumns)
-            for( c = 0; c < coll; c++ ) {
-                // for each array within that array (rows)
-                for( r = 0; r < rows; r++ ) {
-                    // Ensure the value is uppercase.
-                    printf("| %c ", board[c][r]);
-                    /*
-                    if (board[c][r] != "*" || "A" || "B" || "C"){
-                        printf("| I ");
-                    }
-                    */
-                }
-                
-                printf("|\n");
-                
-                for( f = 0; f < coll; f++){
-                    printf("+---");
-                    
-                }
-                
-                printf("+\n");
-                
-            }
             return 0;
             
         }
     
     }
-
-// FIXME: Add Board Display Function
     
 // FIXME: Add save board file Function
     
@@ -85,4 +56,39 @@ int main (void){
 // FIXME: Add HIT or MISS function
     
     
+}
+
+//// FUNCTIONS ////
+
+// Print board to screen.
+void print_board(char **board, int coll, int rows){
+    int c, r, f;    // c == collumns; r == Rows; f == frame
+    for(c = 0 ; c < coll ; c++)
+        printf("+---");
+    
+    printf("+\n");
+    
+    // for each item in the first array (collumns)
+    for( c = 0; c < coll; c++ ) {
+        // for each array within that array (rows)
+        for( r = 0; r < rows; r++ ) {
+            // Ensure the value is uppercase.
+            printf("| %c ", board[c][r]);
+            /*
+             if (board[c][r] != "*" || "A" || "B" || "C"){
+             printf("| I ");
+             }
+             */
+        }
+        
+        printf("|\n");
+        
+        for( f = 0; f < coll; f++){
+            printf("+---");
+            
+        }
+        
+        printf("+\n");
+        
+    }
 }
