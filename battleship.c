@@ -39,7 +39,7 @@ int main (void){
         coll = 10;          // (# of collumns on the board)
         rows = 10;          // (# of rows on the board)
         
-    // dynamically set board size in memory
+    // Dynamically set board size in memory
         
         // Allocate collumn space.
         char **board = malloc(coll * sizeof(char *));
@@ -57,18 +57,21 @@ int main (void){
         for (int i = 0; i < 7; i++){
             // Determine horizontal or vertical orientation of ship.
             *ships[i].orient = rand() % 2;
-
-            if ( *ships[i].orient == 0){
-                printf("DEBUG - %d is Horizontal: %d\n", i, *ships[i].orient);
-                
-            } else if (*ships[i].orient == 1){
-                printf("DEBUG - %d is Vertical: %d\n", i, *ships[i].orient);
-                
-            } else {
-                printf("DEBUG - %d is NOT WORKING: %d\n", i, *ships[i].orient);
+            
+            // Depending on orientation of ship [horizonal(0) or vertical(1)]
+            switch (*ships[i].orient) {
+                // Set coordinates for Horizontal Ships
+                case 0:
+                    printf("DEBUG - %d is Horizontal: %d\n", i, *ships[i].orient);
+                // Set coordinates for Vertical Ships
+                    break;
+                case 1:
+                    printf("DEBUG - %d is Vertical: %d\n", i, *ships[i].orient);
+                    break;
+                default:
+                    printf("DEBUG - %d is NOT WORKING: %d\n", i, *ships[i].orient);
+                    break;
             }
-            
-            
 /*
             // Collin is a nice guy; he is also our collumn counter.
             for(int collin = 0; collin < coll; collin++) {
