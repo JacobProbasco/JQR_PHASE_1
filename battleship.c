@@ -7,30 +7,30 @@
 
 typedef struct ship {
     char name[17];
-    char mark_char[1];          // Character that the ship displays when printed.
-    unsigned int ship_size[1];  // Amount of markers allocated to the ship.
-    struct coord {
-        unsigned int horiz[1];               // Location of ship. First num is Column, second is row
-        unsigned int verti[1];
-    }coord;
-    int orient[1];              // -1 - unset; 0 - Horizontal; 1 - Vertical
+    char mark_char;          // Character that the ship displays when printed.
+    unsigned int size;  // Amount of markers allocated to the ship.
+    struct start_pt {
+        unsigned int left_rig[1];               // Location of ship. First num is Column, second is row
+        unsigned int up_dwn[1];
+    }start_pt;
+    int orient;              // -1 - unset; 0 - left_right; 1 - up_down
 }ship;
 
 void print_board(char **board, int coll, int rows);
 unsigned int rand_point(unsigned int max);
-int set_ship (ship *vessel, int board_width, int board_height, char **board);
+int choose_placement (ship *vessel, int board_width, int board_height, char **board);
 void clean_exit(int exit_type, char *board);
 
 #define NUM_ARRAY_ELEM(a) (sizeof(a) / sizeof(*a))
         
 int main (void){
     
-    ship patrol = { "Patrol Boat", 'P', 2, { -1, -1}, {-1}};
-    ship sub = { "Submarine", 'S', 2, { -1, -1}, {-1}};
-    ship cruise = { "Cruiser", 'C', 3, { -1, -1}, {-1}};
-    ship destroyer = { "Destroyer", 'D', 3, { -1, -1}, {-1}};
-    ship battle = { "Battleship", 'B', 4, { -1, -1}, {-1}};
-    ship aircraft = { "Aircraft Carrier", 'A', 5, { -1, -1}, {-1}};
+    ship patrol = { "Patrol Boat", 'P', 2, { -1, -1}, -1};
+    ship sub = { "Submarine", 'S', 2, { -1, -1}, -1};
+    ship cruise = { "Cruiser", 'C', 3, { -1, -1}, -1};
+    ship destroyer = { "Destroyer", 'D', 3, { -1, -1}, -1};
+    ship battle = { "Battleship", 'B', 4, { -1, -1}, -1};
+    ship aircraft = { "Aircraft Carrier", 'A', 5, { -1, -1}, -1};
     ship *ships[6] = { &patrol, &sub, &cruise, &destroyer, &battle, &aircraft };
     
     srand((unsigned)time(NULL)); // seed srand()
@@ -61,30 +61,50 @@ int main (void){
         // Set default markers to water.
         memset(*board, '*', sizeof(board[0][0]) * coll * rows);
         
-        // Iterate through the list of ships and randomly place the ships in valid locations.
         for (int i = 0; i < 6; i++){
             
-            // Assign horizontal or vertical orientation (random)
-            *ships[i]->orient = rand() % 2;
+            // Iterate through the list of ships and randomly place the ships in valid locations.
+            ship *curr_ship = ships[i];
+
+            // Assign left_right or up_down orientation (random)
+            ships[i]->orient = rand() % 2;
             
-            // Set the ship to a valid place on the board. If none can be found, return the error.
-            if (!set_ship(ships[i], (coll - 1), (rows-1), board)){
+            // Set the ship to a valid place on the board.
+            // If none can be found, return the error.
+            if (choose_placement(curr_ship, (coll - 1), (rows-1), board)){
                 
-                clean_exit(1, *board);
+                printf("///// DEBUG: %s final start_pt:\n///// (%d,%d) /////\n", curr_ship->name, *curr_ship->start_pt.left_rig, *curr_ship->start_pt.up_dwn);
                 
+                // After valid location found, incrementally place ship's character on the board in the appropriate places. If not, break out for new numbers.
+                
+                // Horizontal Ships
+                if (curr_ship->orient == 0){
+                    for (int h = 0; h < curr_ship->size; h++){
+                        // Place the the ship's char on the board in the place that corresponds to the established location of the ship.
+                        board[*curr_ship->start_pt.left_rig + h][*curr_ship->start_pt.up_dwn] = curr_ship->mark_char;
+                    }
+                }
+                
+                // Vertical ships
+                if (curr_ship->orient == 1){
+                    for (int v = 0; v < curr_ship->size; v++){
+                        board[*curr_ship->start_pt.left_rig][*curr_ship->start_pt.up_dwn + v] = curr_ship->mark_char;
+                    }
+                }
             } else {
-                
+                clean_exit(1, *board);
             };
             
         }
        
-    // Begin round.
-        // round is incremented with wins until player quits program.
+//// Begin round.
+//// round is incremented with wins until player quits program.
         int round = 0;
         while (round >= 0){
             
             print_board(board, coll, rows);
-            
+
+// Debug Return to keep round from looping.
             return 0;
             
         }
@@ -92,8 +112,6 @@ int main (void){
     }
     
 // FIXME: Add save board file Function
-    
-// FIXME: Add ship-Validaiton Function
     
 // FIXME: Add HIT or MISS function
     
@@ -116,11 +134,6 @@ void print_board(char **board, int coll, int rows){
         for( r = 0; r < rows; r++ ) {
             // Ensure the value is uppercase.
             printf("| %c ", board[c][r]);
-            /*
-             if (board[c][r] != "*" || "A" || "B" || "C"){
-             printf("| I ");
-             }
-             */
         }
         
         printf("|\n");
@@ -158,81 +171,77 @@ unsigned int rand_point(unsigned int max) {
 }
 
 // Determine a valid locaiton on the board from random.
-int set_ship (ship *vessel, int board_width, int board_height, char **board){
+int choose_placement (ship *vessel, int board_width, int board_height, char **board){
     
     bool location_found = false;
-    int orientation = *vessel->orient;
-    int vessel_size = *vessel->ship_size;
-    int horizontal;
-    int vertical;
-    
+    unsigned int orientation = vessel->orient;
+    int vessel_size = vessel->size;
+    int left_right;
+    int up_down;
+
     switch (orientation) {
+            
         // Horizontal Ships
         case 0:
             
-            printf("DEBUG - Horizontal: %d\n", orientation);
-            
             while (location_found == false){
-                // Generate a starting point that would place the ship inside the board.
-                horizontal = rand_point(board_width - vessel_size);
-                printf("DEBUG - Random Horizontal Starting point is: %d\n", horizontal);
                 
+                // Generate a starting point that would place the ship inside the board.
+                left_right = rand_point(board_width - vessel_size);
                 // Generate a row number that is on the board.
-                vertical = rand_point(board_height);
-                printf("DEBUG - Random Vertical Starting point is: %d\n", vertical);
-
+                up_down = rand_point(board_height);
+                
+                printf("///// DEBUG: %s //////\n///// [LR(0), UD(1)]: |%d|\n///// left_rig starting point: %d\n///// up_dwn start pt: %d\n", vessel->name, orientation, left_right, up_down);
+                
                 // for the size of the ship
                 for (int i = 0; i < vessel_size; i++){
-                    // incrementally check that location for water. If not, break out for new numbers.
+                    
+                    // incrementally check that location for water.
                                 // Collumn #        // Row #
-                    printf("DEBUG - HoriCheck #%d\n", i);
-                    if ( board[horizontal + i][vertical] != '*'){
-                        break;
+                    if (board[left_right + i][up_down] != '*'){
+                        break;  // If not, break back to while loop for new numbers.
                     }
                     
                     // if we reach the end of the loop, all spaces contain water. location is found.
                     if (i == (vessel_size - 1)){
                         location_found = true;
+                        *vessel->start_pt.left_rig = left_right;
+                        *vessel->start_pt.up_dwn = up_down;
                     }
-                    
                 }
-            }
+            }break;
             
-            break;
-            
-        // Vertical Ships
+        // up_down Ships
         case 1:
-            printf("DEBUG - VERTICAL: %d\n", orientation);
-
             while (location_found == false){
-                // Generate a starting point that would place the ship inside the board.
-                vertical = rand_point(board_height - vessel_size);
-                printf("DEBUG - Random Vertical Starting point is: %d\n", vertical);
                 
+                // Generate a starting point that would place the ship inside the board.
+                up_down = rand_point(board_height - vessel_size);
                 // Generate a collumn number that is on the board.
-                horizontal = rand_point(board_width);
-                printf("DEBUG - Random Horizontal Starting point is: %d\n", horizontal);
+                left_right = rand_point(board_width);
+                
+                printf("///// DEBUG: %s //////\n///// [LR(0), UD(1)]: |%d|\n///// left_rig starting point: %d\n///// up_dwn start pt: %d\n", vessel->name, orientation, left_right, up_down);
                 
                 // for the size of the ship
                 for (int i = 0; i < vessel_size; i++){
-                    // incrementally check along vertical axis for water. If not, break out for new numbers.
+                    // incrementally check along up_down axis for water. If not, break out for new numbers.
                                // Collumn #        // Row #
-                    printf("DEBUG - VertiCheck #%d\n", i);
-                    if (board[horizontal][vertical +i] != '*'){
+                    if (board[left_right][up_down +i] != '*'){
                         break;
                     }
                     
-                    // if we reach the end of the loop, all spaces contain water. location is found.
+                    // Once we have found a valid location, set the start_ptinates for that ship and return success
                     if (i == (vessel_size - 1)){
                         location_found = true;
+                        *vessel->start_pt.left_rig = left_right;
+                        *vessel->start_pt.up_dwn = up_down;
                     }
-                    
                 }
-            } break;
+            }break;
             
         default:
-            printf("DEBUG - ERROR: It is BROKEN!!!");
-            return 1;
+            // Technically, the program should loop and never hit this error.
+            printf("An unknown error occured.\nA valid location was not found and the placement loop was unexpectedly broken.\n");
             break;
     }
     return -1;
