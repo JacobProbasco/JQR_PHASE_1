@@ -38,8 +38,23 @@ int main (int argc, char * argv[]){
         while (round >= 0){
             // allocate memory for game board and populate with water (*)
             
+            board[0][0] = '~';
             print_board(board, colls, rows);
+            
+            check_volly(0, 0, &board);
+            
+            print_board(board, colls, rows);
+            
+            printf("Welcome to Battleship.\n ");
 
+            char *usr_inp[2] = { NULL };
+            
+            for ( int i = 0; i < 2; i++){
+                if (fgets(usr_inp[i], sizeof(usr_inp[1]), stdin) == NULL){
+                    clean_exit(3, *board);
+                }
+            }
+            
             // Debug Return to keep round from looping.
             return 0;
         }
@@ -250,14 +265,35 @@ unsigned int rand_point(unsigned int max) {
     return (rando / segments);
 }
 
+void check_volly(int up_down, int left_right, char ***board){
+    char board_value;
+    
+    board_value = *board[up_down][left_right];
+    
+    switch (board_value){
+        case '*':
+            printf("WAH WAH. Hit Water and missed. Try again.\n"); break;
+        case 'H':
+            printf("You already hit this once. Try again.\n"); break;
+        case 'M':
+            printf("You already missed this once. Try again\n"); break;
+        default:
+            printf("You hit a ship!\n");
+            *board[up_down][left_right] = 'H';
+            break;
+    }
+}
+
 void clean_exit(int exit_type, char *board){
     switch(exit_type){
         case 0:
-            printf("Goodbye!"); break;
+            printf("Goodbye!\n"); break;
         case 1:
-            printf("ERROR in Setting Ship. Exiting"); break;
+            printf("ERROR in Setting Ship. Exiting\n"); break;
+        case 3:
+            
         default:
-            printf("Unknown ERROR. Exiting.");
+            printf("Unknown ERROR. Exiting.\n");
     }
     free(board);
     exit(exit_type);
