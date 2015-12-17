@@ -17,25 +17,26 @@ int main (int argc, char * argv[]){
     ship aircraft = { "Aircraft Carrier", 'A', 5, { -1, -1}, -1};
     ship *ships[6] = { &patrol, &sub, &cruise, &destroyer, &battle, &aircraft };
     
-    printf("Hello Battleship\n");
-    // running == "program is running"
-    int running = 1;
+
+    // game == "program is running"
+    int game = 1;
     int colls, rows;
     char **board;
     
-    while (running){
+    while (game){
         
-        // FIXME: Add recieve number of collsumns and rows from server w/data validaiton
-        colls = 15;         // (# of collumns on the board)
-        rows = 15;          // (# of rows on the board)
+        colls = 12;         // (# of collumns on the board)
+        rows = 12;          // (# of rows on the board)
+        // FIXME: Add recieve number of collumns and rows from server w/data validaiton
         
-        // Set-Up New Game
         make_board(&board, colls, rows);
         choose_placement(ships, (colls - 1), (rows - 1), &board);
+        // allocate memory for game board and populate with water (*)
         
         //// Begin round; incremented with wins until player or server quits.
         int round = 0;
         while (round >= 0){
+            // allocate memory for game board and populate with water (*)
             
             print_board(board, colls, rows);
 
@@ -175,9 +176,7 @@ int choose_placement (ship **ships, int board_width, int board_height, char ***b
                 // Technically, the program should loop and never hit this error.
                 printf("An unknown error occured.\nA valid location was not found and the placement loop was unexpectedly broken.\n");
                 break;
-                
         }
-    
     }
     *board = my_board;
     return -1;
@@ -186,29 +185,47 @@ int choose_placement (ship **ships, int board_width, int board_height, char ***b
 // Print board to screen.
 void print_board(char **board, int colls, int rows){
     int c, r, f;    // c == collumns; r == Rows; f == frame
-    for(c = 0 ; c < colls ; c++)
-        printf("+---");
     
-    printf("+\n");
+    // Maximum number of digits for any row/collumn on the board
+    int cnum_leng = ((colls / 10) + 1);
+    int rnum_leng = ((rows / 10) + 2);
     
-    // for each item in the first array (collumns)
-    for( c = 0; c < colls; c++ ) {
-        // for each array within that array (rows)
-        for( r = 0; r < rows; r++ ) {
-            // Ensure the value is uppercase.
-            printf("| %c ", board[c][r]);
+    char *s = "-------------"; // maximum int is 10 digits long.
+    
+    // Begin printing board at -1 to account for Collumn numbers.
+    for(r = -1; r < rows; r++ ) {
+        // Collumn Number Portion
+        if (r == -1){
+            printf("\n%*s|", cnum_leng + 2, "");
+            for(c = 0 ; c < colls ; c++) {
+                int digits = (c / 10);
+                                    // if the
+                printf("%*d%*c", cnum_leng + (digits % 2), c, cnum_leng, '|');
+            }
         }
         
-        printf("|\n");
-        
-        for( f = 0; f < colls; f++){
-            printf("+---");
+        // Cycle through Row numbers.
+        if (r >= 0) {
+            printf("%*d|", rnum_leng + 1, r);
             
+            for( c = 0; c < colls; c++ ) {
+                printf("%*c%*c", cnum_leng, board[c][r], cnum_leng + (c / 10), '|');
+                // for each array within that array (rows)
+            }
         }
         
-        printf("+\n");
+        printf("\n");
+
+        // Row Dividers
+        printf("%.*s%s", rnum_leng + 1, s, "+");
+        for( f = 0; f < colls; f++){
+            int digits = (f / 10);
+            printf("%.*s%s", cnum_leng + 1 + digits, s, "+");
+        }
         
+        printf("\n");
     }
+    printf("\n");
 }
 
 // Provides a random number limited to the maximum passed.
