@@ -1,21 +1,21 @@
 #include <stdio.h>
 #include <stdlib.h>     // malloc()
-#include <string.h>     // memset()
+#include <string.h>     // memset() ; strncmp()
 #include <ctype.h>      // toupper()
 #include <time.h>       // seed for srand()
+#include <inttypes.h>   //
 #include <stdbool.h>    // Adds typedef for bool
 
 #include "bship.h"      // Ship structures; function definitions.s
 
 int main (int argc, char * argv[]){
-    
-    ship patrol = { "Patrol Boat", 'P', 2, { -1, -1}, -1};
-    ship sub = { "Submarine", 'S', 2, { -1, -1}, -1};
-    ship cruise = { "Cruiser", 'C', 3, { -1, -1}, -1};
-    ship destroyer = { "Destroyer", 'D', 3, { -1, -1}, -1};
-    ship battle = { "Battleship", 'B', 4, { -1, -1}, -1};
-    ship aircraft = { "Aircraft Carrier", 'A', 5, { -1, -1}, -1};
-    ship *ships[6] = { &patrol, &sub, &cruise, &destroyer, &battle, &aircraft };
+    ship aircraft = { "Aircraft Carrier", 'A', 5, { -1, -1}, -1, 0};
+    ship battle = { "Battleship", 'B', 4, { -1, -1}, -1, 0};
+    ship cruise = { "Cruiser", 'C', 3, { -1, -1}, -1, 0};
+    ship destroyer = { "Destroyer", 'D', 3, { -1, -1}, -1, 0};
+    ship patrol = { "Patrol Boat", 'P', 2, { -1, -1}, -1, 0};
+    ship sub = { "Submarine", 'S', 2, { -1, -1}, -1, 0};
+    ship *ships[6] = { &aircraft, &battle, &cruise, &destroyer, &patrol, &sub};
     
 
     // game == "program is running"
@@ -34,29 +34,65 @@ int main (int argc, char * argv[]){
         // allocate memory for game board and populate with water (*)
         
         //// Begin round; incremented with wins until player or server quits.
-        int round = 0;
-        while (round >= 0){
+        int wins = 0;
+        int rounds = 1;
+        int get_inpt = 0;
+        
+        while (rounds > 0){
             // allocate memory for game board and populate with water (*)
-            
-            board[0][0] = '~';
-            print_board(board, colls, rows);
-            
-            check_volly(0, 0, &board);
-            
-            print_board(board, colls, rows);
-            
             printf("Welcome to Battleship.\n ");
-
-            char *usr_inp[2] = { NULL };
             
-            for ( int i = 0; i < 2; i++){
-                if (fgets(usr_inp[i], sizeof(usr_inp[1]), stdin) == NULL){
-                    clean_exit(3, *board);
+            unsigned int ships_sunk = 0;
+            
+            // Get user input
+            int l_r = 0;
+            int u_d = 0;
+            
+            for (get_inpt = 0; get_inpt != -1; get_inpt++) {
+                
+                print_board(board, colls, rows);
+                printf("Enter your target coordinates.\n");
+                printf("Left-Right Range: 0-%d\n", colls - 1);
+                printf("Up-down Range: 0-%d\n", rows - 1);
+                printf("USAGE - [LEFT_RIGHT#,UP_DOWN#] ENTER:\n ");
+                
+                // strtoimax(const char *restrict str, char **restrict endptr, int base)
+                
+                if (scanf("%d,%d", &l_r, &u_d) != 2) {
+                    printf("You must enter two numbers with a comma between.\n");
+                }
+                else {
+                    printf("Up Down: %u. ", u_d);
+                    printf("Left Right: %u\n", l_r);
+                    int csb_return = check_set_board(l_r, u_d, board, ships);
+                    // Error checking
+                    if (csb_return < 0){
+                        clean_exit(3, *board);
+                    } else {
+                        ships_sunk = csb_return;
+                        get_inpt = -1;
+                    }
                 }
             }
             
-            // Debug Return to keep round from looping.
-            return 0;
+            if (ships_sunk == 6){
+                printf("You sunk all my ships in %d vollys!\n", get_inpt);
+                printf("Play again? (y or n)\n");
+                
+                char quit_inpt[1];
+                
+                while (scanf("%c", quit_inpt) != 1) {
+                    printf("Play again? You must enter y for yes or n for no.\n");
+                }
+                
+                if (strncmp("n", quit_inpt, 1)) {
+                    printf("Game over.\nWon: %d\nLost: %d\n", wins, rounds - wins);
+                    printf("Left Right: %u\n", l_r);
+                    rounds = -1;
+                } else if (strncmp("y", quit_inpt, 1)) {
+                    rounds++;
+                }
+            }
         }
     }
     
@@ -257,31 +293,59 @@ unsigned int rand_point(unsigned int max) {
     const unsigned int segments = RAND_MAX / range;
     const unsigned int limit = segments * range;
     
-    do
-    {
+    do {
         rando = rand();
     } while (rando >= limit);
     
     return (rando / segments);
 }
 
-void check_volly(int up_down, int left_right, char ***board){
-    char board_value;
+int check_set_board(unsigned int left_right, unsigned int up_down, char **board, ship **vessels){
     
-    board_value = *board[up_down][left_right];
+    ship *vessel;
+    int hit_ship = -1;
     
-    switch (board_value){
-        case '*':
-            printf("WAH WAH. Hit Water and missed. Try again.\n"); break;
+    switch (board[left_right][up_down]){
+        case '*': printf("WAH WAH. Hit Water and missed. Try again.\n");
+            hit_ship = -2; break;
+        case 'A': hit_ship = 0; break;
+        case 'B': hit_ship = 1; break;
+        case 'C': hit_ship = 2; break;
+        case 'D': hit_ship = 3; break;
+        case 'P': hit_ship = 4; break;
+        case 'S': hit_ship = 5; break;
         case 'H':
-            printf("You already hit this once. Try again.\n"); break;
+            printf("You already hit this once. Try again.\n");
+            return 0;
         case 'M':
-            printf("You already missed this once. Try again\n"); break;
+            printf("You already missed this once. Try again\n");
+            return 0;
         default:
-            printf("You hit a ship!\n");
-            *board[up_down][left_right] = 'H';
-            break;
+            printf("Somehow, you hit an unknown character on the board...\n");
+            return 0;
     }
+    
+    if (hit_ship >= 0){
+        vessel = vessels[hit_ship];
+        board[left_right][up_down] = 'H';
+        vessel->hits++;
+        
+        if (vessel->hits == vessel->size){
+            printf("You sunk my %s!\n", vessel->name);
+            return 1;
+        } else {
+            printf("You hit a ship!\n");
+            return 1;
+        }
+    }
+    
+    if (hit_ship == -2){
+        board[left_right][up_down] = 'M';
+        return 0;
+    }
+    
+    // Should not reach this point in the function, but if so returns error.
+    return -1;
 }
 
 void clean_exit(int exit_type, char *board){
@@ -291,6 +355,7 @@ void clean_exit(int exit_type, char *board){
         case 1:
             printf("ERROR in Setting Ship. Exiting\n"); break;
         case 3:
+            printf("Error in check_set_board. Exiting. \n"); break;
             
         default:
             printf("Unknown ERROR. Exiting.\n");

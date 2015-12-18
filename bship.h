@@ -18,15 +18,15 @@ typedef struct ship {
         unsigned int up_dwn[1];
     }start_pt;
     int orient;                     // -1 - unset; 0 - left_right; 1 - up_down
+    int hits;
 }ship;
 
 void make_board(char ***board, int colls, int rows);
 unsigned int rand_point(unsigned int max);
 int choose_placement (ship **vessel, int board_width, int board_height, char ***board);
-void check_volly(int up_down, int left_right, char ***board);
 
 void print_board(char **board, int colls, int rows);
-void check_volly(int up_down, int left_right, char ***board);
+int check_set_board(unsigned int left_right, unsigned int up_down, char **board, ship **vessels);
 void clean_exit(int exit_type, char *board);
 
 #endif /* bship_h */
