@@ -17,7 +17,7 @@ int main (int argc, char * argv[]){
     ship sub = { "Submarine", 'S', 2, { -1, -1}, -1, 0};
     ship *ships[6] = { &aircraft, &battle, &cruise, &destroyer, &patrol, &sub};
     
-
+    
     // game == "program is running"
     int game = 1;
     int colls, rows;
@@ -48,27 +48,31 @@ int main (int argc, char * argv[]){
             int l_r = 0;
             int u_d = 0;
             
+            print_board(board, colls, rows);
+            
+            printf("\nLeft-Right Range: 0-%d\n", colls - 1);
+            printf("Up-down Range: 0-%d\n", rows - 1);
+            printf("USAGE - [LEFT_RIGHT#,UP_DOWN#] ENTER:\n");
+            printf("Enter your target coordinates:\n");
+
             for (get_inpt = 0; get_inpt != -1; get_inpt++) {
-                
-                print_board(board, colls, rows);
-                printf("Enter your target coordinates.\n");
-                printf("Left-Right Range: 0-%d\n", colls - 1);
-                printf("Up-down Range: 0-%d\n", rows - 1);
-                printf("USAGE - [LEFT_RIGHT#,UP_DOWN#] ENTER:\n ");
                 
                 // strtoimax(const char *restrict str, char **restrict endptr, int base)
                 
-                if (scanf("%d,%d", &l_r, &u_d) != 2) {
+                if (scanf(" %d,%d", &l_r, &u_d) != 2) {
                     printf("You must enter two numbers with a comma between.\n");
                 }
                 else {
-                    printf("Up Down: %u. ", u_d);
-                    printf("Left Right: %u\n", l_r);
                     int csb_return = check_set_board(l_r, u_d, board, ships);
+                    
                     // Error checking
                     if (csb_return < 0){
                         clean_exit(3, *board);
                     } else {
+                        printf("\nLeft-Right Range: 0-%d\n", colls - 1);
+                        printf("Up-down Range: 0-%d\n", rows - 1);
+                        printf("USAGE - [LEFT_RIGHT#,UP_DOWN#] ENTER:\n");
+                        printf("Enter your target coordinates:\n");
                         ships_sunk = csb_return;
                         get_inpt = -1;
                     }
@@ -142,7 +146,7 @@ int choose_placement (ship **ships, int board_width, int board_height, char ***b
         
         // Pre-determined values
         ship *vessel = ships[i];
-
+        
         // Assign left_right or up_down orientation (random)
         vessel->orient = rand() % 2;
         
@@ -250,7 +254,7 @@ void print_board(char **board, int colls, int rows){
             printf("\n%*s|", cnum_leng + 2, "");
             for(c = 0 ; c < colls ; c++) {
                 int digits = (c / 10);
-                                    // if the
+                // if the
                 printf("%*d%*c", cnum_leng + (digits % 2), c, cnum_leng, '|');
             }
         }
@@ -266,7 +270,7 @@ void print_board(char **board, int colls, int rows){
         }
         
         printf("\n");
-
+        
         // Row Dividers
         printf("%.*s%s", rnum_leng + 1, s, "+");
         for( f = 0; f < colls; f++){
@@ -300,14 +304,15 @@ unsigned int rand_point(unsigned int max) {
     return (rando / segments);
 }
 
-int check_set_board(unsigned int left_right, unsigned int up_down, char **board, ship **vessels){
+int check_set_board(unsigned int left_right, unsigned int up_down, char **board, ship **vessels)
+{
     
     ship *vessel;
     int hit_ship = -1;
     
     switch (board[left_right][up_down]){
-        case '*': printf("WAH WAH. Hit Water and missed. Try again.\n");
-            hit_ship = -2; break;
+        case '*': printf("You hit the Water and missed at %d,%d.\n", left_right, up_down);
+                  hit_ship = -2; break;
         case 'A': hit_ship = 0; break;
         case 'B': hit_ship = 1; break;
         case 'C': hit_ship = 2; break;
@@ -334,7 +339,7 @@ int check_set_board(unsigned int left_right, unsigned int up_down, char **board,
             printf("You sunk my %s!\n", vessel->name);
             return 1;
         } else {
-            printf("You hit a ship!\n");
+            printf("You hit a ship at %d,%d!\n", left_right, up_down);
             return 1;
         }
     }

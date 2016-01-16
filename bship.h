@@ -23,7 +23,7 @@ typedef struct ship {
 
 void make_board(char ***board, int colls, int rows);
 unsigned int rand_point(unsigned int max);
-int choose_placement (ship **vessel, int board_width, int board_height, char ***board);
+int choose_placement (ship **ships, int board_width, int board_height, char ***board);
 
 void print_board(char **board, int colls, int rows);
 int check_set_board(unsigned int left_right, unsigned int up_down, char **board, ship **vessels);
